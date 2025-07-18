@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Management</title>
+</head>
+<body>
+    <h1>Employee Management</h1>
+
+    <h2>Add Employee</h2>
+    <form id="add-employee-form">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="text" id="position" placeholder="Position" required>
+        <button type="submit">Add</button>
+    </form>
+
+    <h2>Employees</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="employee-table-body">
+        </tbody>
+    </table>
+
+    <script>
+        const employeeTableBody = document.getElementById('employee-table-body');
+        const addEmployeeForm = document.getElementById('add-employee-form');
+
+        const fetchEmployees = async () => {
+            const response = await fetch('/employees');
+            const employees = await response.json();
+            employeeTableBody.innerHTML = '';
+            employees.forEach(employee => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${employee.id}</td>
+                    <td>${employee.name}</td>
+                    <td>${employee.position}</td>
+                    <td>
+                        <button onclick="deleteEmployee(${employee.id})">Delete</button>
+                        <button onclick="editEmployee(${employee.id}, '${employee.name}', '${employee.position}')">Edit</button>
+                    </td>
+                `;
+                employeeTableBody.appendChild(row);
+            });
+        };
+
+        const addEmployee = async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const position = document.getElementById('position').value;
+            await fetch('/employees', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, position })
+            });
+            addEmployeeForm.reset();
+            fetchEmployees();
+        };
+
+        const deleteEmployee = async (id) => {
+            await fetch(`/employees/${id}`, {
+                method: 'DELETE'
+            });
+            fetchEmployees();
+        };
+
+        const editEmployee = (id, name, position) => {
+            const newName = prompt('Enter new name:', name);
+            const newPosition = prompt('Enter new position:', position);
+            if (newName && newPosition) {
+                fetch(`/employees/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: newName, position: newPosition })
+                }).then(fetchEmployees);
+            }
+        };
+
+        addEmployeeForm.addEventListener('submit', addEmployee);
+        fetchEmployees();
+    </script>
+</body>
+</html>
